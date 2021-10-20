@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.common.json",
+  "references": [
+    {
+      "path": "./packages/build"
+    },
+    {
+      "path": "./packages/test-environment"
+    },
+    {
+      "path": "./packages/core"
+    },
+    {
+      "path": "./packages/cli"
+    },
+    {
+      "path": "./packages/v8env"
+    },
+    {
+      "path": "./packages/examples"
+    },
+    {
+      "path": "./packages/container-server"
+    }
+  ],
+  "include": [],
+}

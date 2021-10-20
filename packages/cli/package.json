@@ -1,0 +1,117 @@
+{
+  "name": "@fly/cli",
+  "version": "0.56.2",
+  "description": "fly cli",
+  "homepage": "https://github.com/superfly/fly#readme",
+  "license": "Apache-2.0",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "files": [
+    "/bin",
+    "/lib",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "bin": {
+    "flyjs": "./bin/run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superfly/fly"
+  },
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json",
+    "posttest": "tslint -p test -t stylish",
+    "prepack": "yarn oclif-dev manifest && yarn oclif-dev readme",
+    "version": "yarn oclif-dev readme && git add README.md"
+  },
+  "bugs": {
+    "url": "https://github.com/superfly/fly/issues"
+  },
+  "dependencies": {
+    "@fly/build": "0.55.2",
+    "@fly/core": "0.56.0",
+    "@fly/examples": "0.50.0",
+    "@fly/v8env": "0.55.2",
+    "@oclif/command": "^1",
+    "@oclif/config": "^1",
+    "@oclif/plugin-help": "^2",
+    "@oclif/plugin-update": "^1.3.9",
+    "@oclif/plugin-warn-if-update-available": "^1.7.0",
+    "axios": "^0.18.0",
+    "better-sqlite3": "^5.4.3",
+    "chalk": "^2.4.2",
+    "chokidar": "^3.2.1",
+    "cli-ux": "^5.2.1",
+    "execa": "^0.7.0",
+    "form-data": "^2.5.0",
+    "glob": "^7.1.2",
+    "inquirer": "^6.2.2",
+    "js-yaml": "^3.13.0",
+    "mocha": "^4.0.1",
+    "netrc-parser": "^3.1.6",
+    "node-fetch": "^2.6.0",
+    "tslib": "^1"
+  },
+  "devDependencies": {
+    "@oclif/test": "^1",
+    "@oclif/tslint": "^3",
+    "@types/better-sqlite3": "^5.4.0",
+    "@types/execa": "^0.7.0",
+    "@types/glob": "^5.0.35",
+    "@types/inquirer": "^0.0.44",
+    "aws-sdk": "^2.428.0",
+    "globby": "^8",
+    "ts-node": "^8"
+  },
+  "oclif": {
+    "description": "Fly edge application runtime",
+    "commands": "./lib/commands",
+    "bin": "flyjs",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-warn-if-update-available"
+    ],
+    "macos": {
+      "identifier": "com.superfly.fly"
+    },
+    "update": {
+      "s3": {
+        "host": "https://get.fly.io",
+        "bucket": "flyio-cli-assets",
+        "xz": false,
+        "templates": {
+          "target": {
+            "unversioned": "tarballs/<%- channel %>/<%- bin %>-<%- platform %>-<%- arch %><%- ext %>",
+            "versioned": "tarballs/<%- channel %>/<%- bin %>-v<%- version %>/<%- bin %>-v<%- version %>-<%- platform %>-<%- arch %><%- ext %>",
+            "manifest": "tarballs/<%- channel %>/<%- platform %>-<%- arch %>"
+          },
+          "vanilla": {
+            "unversioned": "tarballs/x/<%- channel %>/<%- bin %><%- ext %>",
+            "versioned": "tarballs/x/<%- channel %>/<%- bin %>-v<%- version %>/<%- bin %>-v<%- version %><%- ext %>",
+            "manifest": "tarballs/x/<%- channel %>/version"
+          }
+        }
+      },
+      "node": {
+        "version": "12.13.1",
+        "targets": [
+          "darwin-x64",
+          "linux-x64"
+        ]
+      }
+    },
+    "warn-if-update-available": {
+      "timeoutInDays": 1,
+      "message": "fly update available from <%= chalk.greenBright(config.version) %> to <%= chalk.greenBright(latest) %>."
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=11.10.0"
+  }
+}

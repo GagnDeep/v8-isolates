@@ -1,0 +1,52 @@
+{
+  "name": "fly-root",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "tests/*"
+    ]
+  },
+  "scripts": {
+    "bootstrap": "lerna bootstrap",
+    "build": "tsc -b .",
+    "build:watch": "tsc -b -w -v .",
+    "bundle": "lerna run bundle",
+    "clean-build": "find . -name \".fly\" -type d -exec /bin/rm -rf {} + && rm -rf ./packages/*/lib ./packages/*/dist ./packages/*/tmp ./packages/*/tsconfig.tsbuildinfo",
+    "clean": "yarn clean-build && lerna run --parallel clean",
+    "clean:dependencies": "lerna clean && rm -rf node_modules",
+    "lint": "yarn run tslint '{packages,tests}/*/{src,tests}/**/*.{ts,tsx}'",
+    "lint:fix": "yarn lint --fix",
+    "format": "prettier --parser typescript -l --write '{packages,tests}/*/{src,tests}/**/*.{ts,tsx,js,jsx,json}'",
+    "test": "yarn test:packages && yarn test:e2e",
+    "test:packages": "jest",
+    "test:e2e": "lerna exec --concurrency 1 yarn test --scope \"@fly-test/edge-apps\"",
+    "test:v8env": "lerna exec --concurrency 1 yarn test --scope \"@fly-test/v8env\"",
+    "test:format": "prettier --parser typescript -l '{packages,tests}/*/{src,tests}/**/*.{ts,tsx,js,jsx,json}'",
+    "test:lint": "yarn lint --test --format junit --out ./artifacts/lint.junit.xml",
+    "doc": "lerna run doc"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "^1.22.0",
+    "@types/jest": "^24",
+    "@types/node": "^12",
+    "@types/wait-on": "^3.2.0",
+    "jest": "^24",
+    "jest-junit": "^5.1.0",
+    "jest-silent-reporter": "^0.1.1",
+    "lerna": "^3.14.0",
+    "prettier": "1.14.2",
+    "ts-jest": "^24",
+    "tslint": "^5.11.0",
+    "tslint-config-prettier": "1.15.0",
+    "typedoc": "^0.12.0",
+    "typedoc-plugin-external-module-name": "^1.1.3",
+    "typescript": "3.7.2",
+    "wait-on": "^3.2.0"
+  },
+  "prettier": {
+    "parser": "typescript",
+    "semi": false,
+    "printWidth": 120
+  }
+}

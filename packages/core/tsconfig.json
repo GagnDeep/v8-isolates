@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.common.json",
+  "include": [
+    "./src/**/*"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "./lib",
+    "lib": [
+      "es2017",
+      "es2018.promise",
+      "esnext.asynciterable"
+    ]
+  },
+  "references": [
+    {
+      "path": "../examples"
+    },
+    {
+      "path": "../build"
+    }
+  ]
+}

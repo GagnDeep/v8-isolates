@@ -1,0 +1,39 @@
+{
+  "name": "@fly/core",
+  "version": "0.56.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/superfly/fly"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsc -b .",
+    "build:watch": "tsc -b -w -v ."
+  },
+  "dependencies": {
+    "@fly/v8env": "0.55.2",
+    "console-log-level": "^1.4.0",
+    "ioredis": "^4",
+    "ioredis-mock": "^4",
+    "isolated-vm": "laverdet/isolated-vm",
+    "redis": "^2.8.0",
+    "sharp": "^0.23.3",
+    "source-map": "^0.7.3",
+    "ws": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^4",
+    "@types/js-yaml": "^3.10.1",
+    "@types/redis": "^2.8.14",
+    "@types/sharp": "^0.23.0",
+    "@types/ws": "^4.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

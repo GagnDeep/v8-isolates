@@ -1,0 +1,14 @@
+.envrc
+lib
+dist
+node_modules
+.nyc_output
+.fly
+*.log
+coverage
+artifacts
+docs
+tmp
+.npmrc
+*.tsbuildinfo
+yarn.lock

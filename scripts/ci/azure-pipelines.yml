@@ -1,0 +1,206 @@
+variables:
+  - group: cli_release_credentials
+  - name: System.Debug
+    value: true
+  - name: cli_node_version
+    value: 12.13.1
+  - name: node_version
+    value: 12.13.1
+  - name: yarn_version
+    value: 1.19.1
+
+jobs:
+  - job: test
+    strategy:
+      maxParallel: 2
+      matrix:
+        mac:
+          vm: macOS-latest
+        linux:
+          vm: ubuntu-16.04
+    pool:
+      vmImage: $(vm)
+    variables:
+      CI: true
+    timeoutInMinutes: 20
+    steps:
+      - bash: echo $(Agent.JobName)
+      - task: NodeTool@0
+        inputs:
+          versionSpec: $(node_version)
+      - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+        inputs:
+          versionSpec: $(yarn_version)
+      - bash: yarn install --no-progress && yarn bootstrap
+        displayName: Setup Dependencies
+      - bash: yarn build && yarn bundle
+        displayName: Build
+      - bash: yarn test
+        displayName: Test
+      - task: PublishTestResults@2
+        condition: always()
+        inputs:
+          testResultsFiles: "**/*junit.xml"
+          searchFolder: $(Build.SourcesDirectory)/artifacts
+
+  - job: publish_npm
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    dependsOn: test
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: $(node_version)
+      - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+        inputs:
+          versionSpec: $(yarn_version)
+      - bash: yarn install --no-progress && yarn bootstrap
+        displayName: Setup Dependencies
+      - bash: yarn build && yarn bundle
+        displayName: Build
+      - bash: ./scripts/release/npm
+        displayName: Release updated packages to NPM
+        env:
+          NPM_TOKEN: $(NPM_TOKEN)
+
+  - job: build_cli
+    dependsOn: publish_npm
+    condition: |
+      or(
+        eq(variables['build.sourceBranch'], 'refs/heads/master'),
+        startsWith(variables['build.sourceBranch'], 'refs/heads/cli')
+      )
+    strategy:
+      maxParallel: 2
+      matrix:
+        mac:
+          vm: macOS-latest
+          target: darwin-x64
+        linux:
+          vm: ubuntu-16.04
+          target: linux-x64
+    pool:
+      vmImage: $(vm)
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: $(node_version)
+      - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+        inputs:
+          versionSpec: $(yarn_version)
+      - bash: yarn install --no-progress && yarn bootstrap
+        displayName: Setup Dependencies
+      - bash: yarn build && yarn bundle
+        displayName: Build
+      - bash: ./scripts/release/pack $(target)
+        displayName: Pack CLI Bundle
+      - task: PublishPipelineArtifact@0
+        inputs:
+          artifactName: cli-$(target)
+          targetPath: $(Build.SourcesDirectory)/packages/cli/dist
+
+  - job: publish_cli
+    dependsOn: build_cli
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: $(node_version)
+      - task: geeklearningio.gl-vsts-tasks-yarn.yarn-installer-task.YarnInstaller@2
+        inputs:
+          versionSpec: $(yarn_version)
+      - bash: yarn install --no-progress && yarn bootstrap
+        displayName: Setup Dependencies
+      - task: DownloadPipelineArtifact@1
+        displayName: Download builds
+        inputs:
+          downloadPath: $(Build.StagingDirectory)/dist
+      - bash: find $(Build.StagingDirectory)/dist -name 'cli-*' -exec rsync -rv '{}/' $(Build.SourcesDirectory)/packages/cli/dist/ \;
+        displayName: Move builds to dist
+      - bash: yarn oclif-dev publish
+        workingDirectory: $(Build.SourcesDirectory)/packages/cli
+        env:
+          AWS_ACCESS_KEY_ID: $(RELEASE_ACCESS_KEY_ID)
+          AWS_SECRET_ACCESS_KEY: $(RELEASE_SECRET_ACCESS_KEY)
+          AWS_S3_ENDPOINT: $(RELEASE_ENDPOINT)
+
+  - job: publish_homebrew
+    dependsOn: publish_cli
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - bash: ./scripts/release/homebrew
+        displayName: Update homebrew
+        env:
+          GITHUB_AUTH: $(GITHUB_AUTH)
+
+  - job: build_docker_images
+    condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'))
+    dependsOn: test
+    pool:
+      vmImage: ubuntu-16.04
+    steps:
+      - bash: ./scripts/build-images
+        displayName: Build Firecracker Base Images
+      - task: Docker@2
+        displayName: Push build image
+        inputs:
+          containerRegistry: "Docker Hub (md)"
+          repository: flyio/js-app-build
+          command: push
+          tags: latest
+      - task: Docker@2
+        displayName: Push run image
+        inputs:
+          containerRegistry: "Docker Hub (md)"
+          repository: flyio/js-app-run
+          command: push
+          tags: latest
+  #
+  # - job: Windows
+  #   pool:
+  #     vmImage: vs2017-win2016
+  #   strategy:
+  #     maxParallel: 3
+  #     matrix:
+  #       node-8:
+  #         node_version: 8
+  #       node-10-3:
+  #         node_version: 10.3
+  #       node-latest:
+  #         node_version: ">=10"
+  #         node_check_latest: true
+  #   variables:
+  #     CI: true
+  #   timeoutInMinutes: 10
+  #   steps:
+  #     - task: NodeTool@0
+  #       inputs:
+  #         versionSpec: $(node_version)
+  #         checkLatest: $(node_check_latest)
+  #     # for node-gyp
+  #     # - task: UsePythonVersion@0
+  #     #   inputs:
+  #     #     versionSpec: '2.7'
+  #     #     architecture: 'x64'
+  #     - script: npm install --global windows-build-tools
+  #       displayName: "Install windows build tools"
+  #     - script: npm install -g yarn
+  #       displayName: "Install yarn"
+  #     - script: yarn install --no-progress
+  #       displayName: "yarn install"
+  #     - script: yarn bootstrap --no-progress
+  #       displayName: "yarn bootstrap"
+  #     - script: yarn build && yarn bundle
+  #       displayName: "yarn build && yarn bundle"
+  #       name: Build
+  #     - script: yarn test
+  #       displayName: "yarn test"
+  #       name: Test
+  #     - task: PublishTestResults@2
+  #       condition: always()
+  #       inputs:
+  #         testResultsFiles: "**/*junit.xml"
+  #         searchFolder: $(Build.SourcesDirectory)/artifacts
